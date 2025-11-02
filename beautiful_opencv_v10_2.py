@@ -447,7 +447,7 @@ class BeautifulOpenCVPanelV10_2(TkinterDnD.Tk if HAS_DND else ctk.CTk):
         self.bind("<F11>", lambda e: self.toggle_fullscreen())
 
     def setup_control_window(self):
-        """Setup the floating control panel - COMPACT"""
+        """Setup the floating control panel - RESPONSIVE GRID LAYOUT"""
         self.control_window = Toplevel(self)
         self.control_window.title("Controls - Vision Lab v10.2")
         self.control_window.geometry("380x700")
@@ -461,29 +461,76 @@ class BeautifulOpenCVPanelV10_2(TkinterDnD.Tk if HAS_DND else ctk.CTk):
         # Configure colors
         self.control_window.configure(bg=self.colors['bg'])
 
-        # Scrollable frame for all controls - MINIMAL PADDING
-        control_scroll = ctk.CTkScrollableFrame(
+        # Scrollable frame for all controls
+        self.control_scroll = ctk.CTkScrollableFrame(
             self.control_window,
             fg_color=self.colors['card'],
             corner_radius=8
         )
-        control_scroll.pack(fill="both", expand=True, padx=3, pady=3)
+        self.control_scroll.pack(fill="both", expand=True, padx=3, pady=3)
+
+        # Configure grid to be responsive
+        self.control_scroll.grid_columnconfigure(0, weight=1)
+        self.control_scroll.grid_columnconfigure(1, weight=1)
+
+        # Store all control modules for responsive layout
+        self.control_modules = []
 
         # Add all the control modules
-        self.setup_auto_capture_controls(control_scroll)
-        self.setup_camera_controls(control_scroll)
-        self.setup_image_adjustment_controls(control_scroll)
-        self.setup_detection_controls(control_scroll)
-        self.setup_measurement_controls(control_scroll)
-        self.setup_pid_controls(control_scroll)
-        self.setup_roi_controls(control_scroll)
-        self.setup_display_controls(control_scroll)
-        self.setup_recording_controls(control_scroll)
+        self.control_modules.append(self.setup_auto_capture_controls(self.control_scroll))
+        self.control_modules.append(self.setup_camera_controls(self.control_scroll))
+        self.control_modules.append(self.setup_image_adjustment_controls(self.control_scroll))
+        self.control_modules.append(self.setup_detection_controls(self.control_scroll))
+        self.control_modules.append(self.setup_measurement_controls(self.control_scroll))
+        pid_module = self.setup_pid_controls(self.control_scroll)
+        if pid_module:  # Only if PID is available
+            self.control_modules.append(pid_module)
+        self.control_modules.append(self.setup_roi_controls(self.control_scroll))
+        self.control_modules.append(self.setup_display_controls(self.control_scroll))
+        self.control_modules.append(self.setup_recording_controls(self.control_scroll))
+
+        # Initial layout (1 column)
+        self.current_columns = 1
+        self.reflow_controls()
+
+        # Bind resize event to reflow layout
+        self.control_window.bind("<Configure>", lambda e: self.on_control_window_resize(e))
+
+    def on_control_window_resize(self, event):
+        """Handle control window resize - reflow controls into grid"""
+        # Only respond to width changes
+        if event.widget == self.control_window:
+            width = event.width
+
+            # Determine how many columns based on width
+            if width < 600:
+                desired_columns = 1
+            else:
+                desired_columns = 2
+
+            # Only reflow if column count changed
+            if desired_columns != self.current_columns:
+                self.current_columns = desired_columns
+                self.reflow_controls()
+
+    def reflow_controls(self):
+        """Rearrange control modules in a responsive grid"""
+        # Remove all modules from grid
+        for module in self.control_modules:
+            if module:
+                module.grid_forget()
+
+        # Place modules in grid based on current column count
+        for i, module in enumerate(self.control_modules):
+            if module:
+                row = i // self.current_columns
+                col = i % self.current_columns
+                module.grid(row=row, column=col, sticky="ew", padx=2, pady=2)
 
     def setup_auto_capture_controls(self, parent):
         """Auto-capture mode for dataset collection"""
         module = CollapsibleModule(parent, "📸 Auto-Capture", self.colors, start_open=True)
-        module.pack(fill="x", pady=2, padx=2)
+        # Don't pack - will be gridded by reflow_controls()
 
         content = module.content
 
@@ -560,10 +607,12 @@ class BeautifulOpenCVPanelV10_2(TkinterDnD.Tk if HAS_DND else ctk.CTk):
         )
         self.auto_capture_status.pack(pady=5, padx=5)
 
+        return module
+
     def setup_camera_controls(self, parent):
         """Camera selection and control"""
         module = CollapsibleModule(parent, "📷 Cameras", self.colors, start_open=True)
-        module.pack(fill="x", pady=2, padx=2)
+        # Don't pack - will be gridded by reflow_controls()
 
         content = module.content
 
@@ -650,10 +699,12 @@ class BeautifulOpenCVPanelV10_2(TkinterDnD.Tk if HAS_DND else ctk.CTk):
         )
         self.zoom_value_label.pack(side="left")
 
+        return module
+
     def setup_image_adjustment_controls(self, parent):
         """Image adjustment controls"""
         module = CollapsibleModule(parent, "🎨 Image Adjustments", self.colors, start_open=False)
-        module.pack(fill="x", pady=2, padx=2)
+        # Don't pack - will be gridded by reflow_controls()
 
         content = module.content
 
@@ -711,10 +762,12 @@ class BeautifulOpenCVPanelV10_2(TkinterDnD.Tk if HAS_DND else ctk.CTk):
             button_color=self.colors['accent']
         ).pack(fill="x", padx=10, pady=5)
 
+        return module
+
     def setup_detection_controls(self, parent):
         """Detection and display mode controls"""
         module = CollapsibleModule(parent, "🔍 Detection Modes", self.colors, start_open=False)
-        module.pack(fill="x", pady=2, padx=2)
+        # Don't pack - will be gridded by reflow_controls()
 
         content = module.content
 
@@ -778,10 +831,12 @@ class BeautifulOpenCVPanelV10_2(TkinterDnD.Tk if HAS_DND else ctk.CTk):
             progress_color=self.colors['primary']
         ).pack(anchor="w", padx=10, pady=(10, 5))
 
+        return module
+
     def setup_measurement_controls(self, parent):
         """Measurement controls"""
         module = CollapsibleModule(parent, "📏 Measurements", self.colors, start_open=False)
-        module.pack(fill="x", pady=2, padx=2)
+        # Don't pack - will be gridded by reflow_controls()
 
         content = module.content
 
@@ -837,13 +892,15 @@ class BeautifulOpenCVPanelV10_2(TkinterDnD.Tk if HAS_DND else ctk.CTk):
         )
         calib_btn.pack(side="left")
 
+        return module
+
     def setup_pid_controls(self, parent):
         """PID controller for furnace"""
         if not HAS_PID:
             return
 
         module = CollapsibleModule(parent, "🌡️ PID Controller", self.colors, start_open=False)
-        module.pack(fill="x", pady=2, padx=2)
+        # Don't pack - will be gridded by reflow_controls()
 
         content = module.content
 
@@ -880,10 +937,12 @@ class BeautifulOpenCVPanelV10_2(TkinterDnD.Tk if HAS_DND else ctk.CTk):
             text_color=self.colors['text_dark']
         ).pack(pady=5, padx=5, fill="x")
 
+        return module
+
     def setup_roi_controls(self, parent):
         """ROI controls"""
         module = CollapsibleModule(parent, "🎯 Region of Interest", self.colors, start_open=False)
-        module.pack(fill="x", pady=2, padx=2)
+        # Don't pack - will be gridded by reflow_controls()
 
         content = module.content
 
@@ -916,10 +975,12 @@ class BeautifulOpenCVPanelV10_2(TkinterDnD.Tk if HAS_DND else ctk.CTk):
         )
         clear_roi_btn.pack(pady=10)
 
+        return module
+
     def setup_display_controls(self, parent):
         """Display controls"""
         module = CollapsibleModule(parent, "💾 Screenshot & Display", self.colors, start_open=False)
-        module.pack(fill="x", pady=2, padx=2)
+        # Don't pack - will be gridded by reflow_controls()
 
         content = module.content
 
@@ -946,10 +1007,12 @@ class BeautifulOpenCVPanelV10_2(TkinterDnD.Tk if HAS_DND else ctk.CTk):
             progress_color=self.colors['primary']
         ).pack(anchor="w", padx=10, pady=5)
 
+        return module
+
     def setup_recording_controls(self, parent):
         """Recording controls"""
         module = CollapsibleModule(parent, "🎬 Video Recording", self.colors, start_open=False)
-        module.pack(fill="x", pady=2, padx=2)
+        # Don't pack - will be gridded by reflow_controls()
 
         content = module.content
 
@@ -971,6 +1034,8 @@ class BeautifulOpenCVPanelV10_2(TkinterDnD.Tk if HAS_DND else ctk.CTk):
             text_color=self.colors['text_medium']
         )
         self.recording_status.pack(pady=5)
+
+        return module
 
     # Camera management methods
     def detect_cameras(self):

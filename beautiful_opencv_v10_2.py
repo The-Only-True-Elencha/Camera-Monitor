@@ -469,9 +469,7 @@ class BeautifulOpenCVPanelV10_2(TkinterDnD.Tk if HAS_DND else ctk.CTk):
         )
         self.control_scroll.pack(fill="both", expand=True, padx=3, pady=3)
 
-        # Configure grid to be responsive
-        self.control_scroll.grid_columnconfigure(0, weight=1)
-        self.control_scroll.grid_columnconfigure(1, weight=1)
+        # Configure grid to be responsive (columns configured dynamically in reflow_controls)
 
         # Store all control modules for responsive layout
         self.control_modules = []
@@ -502,11 +500,10 @@ class BeautifulOpenCVPanelV10_2(TkinterDnD.Tk if HAS_DND else ctk.CTk):
         if event.widget == self.control_window:
             width = event.width
 
-            # Determine how many columns based on width
-            if width < 600:
-                desired_columns = 1
-            else:
-                desired_columns = 2
+            # Calculate columns based on width
+            # Each module needs ~300px minimum to be readable
+            MIN_MODULE_WIDTH = 300
+            desired_columns = max(1, width // MIN_MODULE_WIDTH)
 
             # Only reflow if column count changed
             if desired_columns != self.current_columns:
@@ -519,6 +516,10 @@ class BeautifulOpenCVPanelV10_2(TkinterDnD.Tk if HAS_DND else ctk.CTk):
         for module in self.control_modules:
             if module:
                 module.grid_forget()
+
+        # Configure columns dynamically based on current_columns
+        for col in range(self.current_columns):
+            self.control_scroll.grid_columnconfigure(col, weight=1)
 
         # Place modules in grid based on current column count
         for i, module in enumerate(self.control_modules):

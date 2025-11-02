@@ -346,40 +346,59 @@ class BeautifulOpenCVPanelV10_2(TkinterDnD.Tk if HAS_DND else ctk.CTk):
         self.update_frame()
 
     def setup_feed_window(self):
-        """Setup the main feed window (self)"""
-        # Main container
+        """Setup the main feed window (self) - FULLY RESPONSIVE"""
+        # Main container - minimal padding
         main_container = ctk.CTkFrame(self, fg_color=self.colors['bg'])
-        main_container.pack(fill="both", expand=True, padx=10, pady=10)
+        main_container.pack(fill="both", expand=True, padx=2, pady=2)
 
-        # Title
+        # Compact header bar with title and status
+        header_frame = ctk.CTkFrame(main_container, fg_color=self.colors['secondary'], height=40)
+        header_frame.pack(fill="x", padx=2, pady=2)
+        header_frame.pack_propagate(False)  # Don't let it shrink
+
+        # Title - compact
         title_label = ctk.CTkLabel(
-            main_container,
-            text="Vision Laboratory v10.2 ✨",
-            font=("Georgia", 28, "bold"),
+            header_frame,
+            text="Vision Lab v10.2",
+            font=("Georgia", 16, "bold"),
             text_color=self.colors['text_dark']
         )
-        title_label.pack(pady=(15, 10))
+        title_label.pack(side="left", padx=10)
 
-        # Status label
+        # Status label - compact
         self.status_label = ctk.CTkLabel(
-            main_container,
+            header_frame,
             text="🎥 Ready",
-            font=("Georgia", 14),
+            font=("Georgia", 11),
             text_color=self.colors['text_medium']
         )
-        self.status_label.pack(pady=5)
+        self.status_label.pack(side="left", padx=10)
 
-        # Video display area
-        video_frame = ctk.CTkFrame(main_container, fg_color=self.colors['bg'], corner_radius=12)
-        video_frame.pack(fill="both", expand=True, padx=15, pady=15)
+        # Quit button in header
+        quit_btn = ctk.CTkButton(
+            header_frame,
+            text="Quit (Q)",
+            command=self.quit_app,
+            font=("Georgia", 11, "bold"),
+            fg_color=self.colors['warning'],
+            hover_color="#FF8C42",
+            text_color=self.colors['text_dark'],
+            width=80,
+            height=28
+        )
+        quit_btn.pack(side="right", padx=10)
+
+        # Video display area - THIS IS THE KEY: fill ALL remaining space
+        video_frame = ctk.CTkFrame(main_container, fg_color="#000000", corner_radius=0)
+        video_frame.pack(fill="both", expand=True, padx=2, pady=2)
 
         self.video_label = ctk.CTkLabel(
             video_frame,
             text="🎥 Waiting for camera...",
-            font=("Georgia", 16),
-            text_color=self.colors['text_light']
+            font=("Georgia", 14),
+            text_color="#FFFFFF"
         )
-        self.video_label.pack(fill="both", expand=True)
+        self.video_label.pack(fill="both", expand=True, padx=0, pady=0)
 
         # Bind mouse events for ROI
         self.video_label.bind("<Button-1>", self.on_mouse_down)
@@ -387,50 +406,39 @@ class BeautifulOpenCVPanelV10_2(TkinterDnD.Tk if HAS_DND else ctk.CTk):
         self.video_label.bind("<ButtonRelease-1>", self.on_mouse_up)
         self.video_label.bind("<Double-Button-1>", self.on_double_click)
 
-        # Measurement display below video
-        measurement_frame = ctk.CTkFrame(main_container, fg_color=self.colors['secondary'], corner_radius=10)
-        measurement_frame.pack(fill="both", expand=False, padx=15, pady=(0, 15))
+        # Compact measurement display at bottom - FIXED HEIGHT
+        measurement_frame = ctk.CTkFrame(main_container, fg_color=self.colors['secondary'], corner_radius=5, height=100)
+        measurement_frame.pack(fill="x", padx=2, pady=2)
+        measurement_frame.pack_propagate(False)  # Don't expand
+
+        # Measurement header - inline
+        measure_header = ctk.CTkFrame(measurement_frame, fg_color="transparent")
+        measure_header.pack(fill="x", padx=5, pady=3)
 
         ctk.CTkLabel(
-            measurement_frame,
+            measure_header,
             text="📏 Measurements:",
-            font=("Georgia", 14, "bold"),
+            font=("Georgia", 11, "bold"),
             text_color=self.colors['text_dark']
-        ).pack(anchor="w", padx=15, pady=(10, 5))
+        ).pack(side="left")
 
-        # Scrollable frame for multiple measurements
+        # Scrollable measurement display - compact
         self.measurement_list_frame = ctk.CTkScrollableFrame(
             measurement_frame,
             fg_color="transparent",
-            height=80
+            height=60
         )
-        self.measurement_list_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+        self.measurement_list_frame.pack(fill="both", expand=True, padx=5, pady=(0, 5))
 
         self.measurement_value_label = ctk.CTkLabel(
             self.measurement_list_frame,
             text="No measurement",
-            font=("Georgia", 12),
+            font=("Georgia", 10),
             text_color=self.colors['text_medium'],
             anchor="w",
             justify="left"
         )
-        self.measurement_value_label.pack(anchor="w", padx=5, pady=5)
-
-        # Minimal controls - just quit button
-        button_frame = ctk.CTkFrame(main_container, fg_color="transparent")
-        button_frame.pack(pady=10)
-
-        quit_btn = ctk.CTkButton(
-            button_frame,
-            text="Quit (Q)",
-            command=self.quit_app,
-            font=("Georgia", 12, "bold"),
-            fg_color=self.colors['warning'],
-            hover_color="#FF8C42",
-            text_color=self.colors['text_dark'],
-            width=120
-        )
-        quit_btn.pack(side="left", padx=5)
+        self.measurement_value_label.pack(anchor="w", padx=2, pady=2)
 
         # Bind keyboard shortcuts
         self.bind("<q>", lambda e: self.quit_app())
@@ -439,10 +447,10 @@ class BeautifulOpenCVPanelV10_2(TkinterDnD.Tk if HAS_DND else ctk.CTk):
         self.bind("<F11>", lambda e: self.toggle_fullscreen())
 
     def setup_control_window(self):
-        """Setup the floating control panel"""
+        """Setup the floating control panel - COMPACT"""
         self.control_window = Toplevel(self)
-        self.control_window.title("Vision Laboratory v10.2 - Controls")
-        self.control_window.geometry("450x800")
+        self.control_window.title("Controls - Vision Lab v10.2")
+        self.control_window.geometry("380x700")
 
         # Make it float on top
         self.control_window.attributes('-topmost', True)
@@ -453,13 +461,13 @@ class BeautifulOpenCVPanelV10_2(TkinterDnD.Tk if HAS_DND else ctk.CTk):
         # Configure colors
         self.control_window.configure(bg=self.colors['bg'])
 
-        # Scrollable frame for all controls
+        # Scrollable frame for all controls - MINIMAL PADDING
         control_scroll = ctk.CTkScrollableFrame(
             self.control_window,
             fg_color=self.colors['card'],
-            corner_radius=15
+            corner_radius=8
         )
-        control_scroll.pack(fill="both", expand=True, padx=10, pady=10)
+        control_scroll.pack(fill="both", expand=True, padx=3, pady=3)
 
         # Add all the control modules
         self.setup_auto_capture_controls(control_scroll)
@@ -474,8 +482,8 @@ class BeautifulOpenCVPanelV10_2(TkinterDnD.Tk if HAS_DND else ctk.CTk):
 
     def setup_auto_capture_controls(self, parent):
         """Auto-capture mode for dataset collection"""
-        module = CollapsibleModule(parent, "📸 Auto-Capture Mode", self.colors, start_open=True)
-        module.pack(fill="x", pady=5)
+        module = CollapsibleModule(parent, "📸 Auto-Capture", self.colors, start_open=True)
+        module.pack(fill="x", pady=2, padx=2)
 
         content = module.content
 
@@ -484,63 +492,63 @@ class BeautifulOpenCVPanelV10_2(TkinterDnD.Tk if HAS_DND else ctk.CTk):
             content,
             text="Enable Auto-Capture",
             variable=self.auto_capture_enabled,
-            font=("Georgia", 12),
+            font=("Georgia", 11),
             text_color=self.colors['text_dark'],
             fg_color=self.colors['secondary'],
             progress_color=self.colors['primary']
         )
-        enable_switch.pack(pady=10)
+        enable_switch.pack(pady=5, padx=5)
 
         # Interval selection
         ctk.CTkLabel(
             content,
-            text="Capture Interval:",
-            font=("Georgia", 11),
+            text="Interval:",
+            font=("Georgia", 10),
             text_color=self.colors['text_dark']
-        ).pack(pady=(10, 5))
+        ).pack(pady=(5, 2), padx=5, anchor="w")
 
         interval_menu = ctk.CTkOptionMenu(
             content,
             variable=self.auto_capture_interval,
             values=["30 seconds", "1 minute", "3 minutes", "5 minutes"],
-            font=("Georgia", 11),
+            font=("Georgia", 10),
             fg_color=self.colors['primary'],
             button_color=self.colors['accent'],
             button_hover_color=self.colors['primary_dark'],
             text_color=self.colors['text_dark']
         )
-        interval_menu.pack(pady=5)
+        interval_menu.pack(pady=3, padx=5, fill="x")
 
         # Save location
         ctk.CTkLabel(
             content,
-            text="Save Location:",
-            font=("Georgia", 11),
+            text="Save To:",
+            font=("Georgia", 10),
             text_color=self.colors['text_dark']
-        ).pack(pady=(10, 5))
+        ).pack(pady=(5, 2), padx=5, anchor="w")
 
         path_frame = ctk.CTkFrame(content, fg_color="transparent")
-        path_frame.pack(fill="x", pady=5)
+        path_frame.pack(fill="x", pady=3, padx=5)
 
         path_entry = ctk.CTkEntry(
             path_frame,
             textvariable=self.auto_capture_save_path,
-            font=("Georgia", 10),
+            font=("Georgia", 9),
             fg_color=self.colors['bg'],
             text_color=self.colors['text_dark'],
-            width=300
+            width=220
         )
-        path_entry.pack(side="left", padx=(0, 5))
+        path_entry.pack(side="left", padx=(0, 3))
 
         browse_btn = ctk.CTkButton(
             path_frame,
-            text="Browse",
+            text="...",
             command=self.browse_save_location,
             font=("Georgia", 10),
             fg_color=self.colors['accent'],
             hover_color=self.colors['primary_dark'],
             text_color=self.colors['text_dark'],
-            width=80
+            width=50
         )
         browse_btn.pack(side="left")
 
@@ -548,15 +556,15 @@ class BeautifulOpenCVPanelV10_2(TkinterDnD.Tk if HAS_DND else ctk.CTk):
         self.auto_capture_status = ctk.CTkLabel(
             content,
             text="Status: Disabled",
-            font=("Georgia", 10),
+            font=("Georgia", 9),
             text_color=self.colors['text_medium']
         )
-        self.auto_capture_status.pack(pady=10)
+        self.auto_capture_status.pack(pady=5, padx=5)
 
     def setup_camera_controls(self, parent):
         """Camera selection and control"""
-        module = CollapsibleModule(parent, "📷 Camera Controls", self.colors, start_open=True)
-        module.pack(fill="x", pady=5)
+        module = CollapsibleModule(parent, "📷 Cameras", self.colors, start_open=True)
+        module.pack(fill="x", pady=2, padx=2)
 
         content = module.content
 
@@ -565,49 +573,50 @@ class BeautifulOpenCVPanelV10_2(TkinterDnD.Tk if HAS_DND else ctk.CTk):
             content,
             text="🔍 Detect Cameras",
             command=self.detect_cameras,
-            font=("Georgia", 12, "bold"),
+            font=("Georgia", 11, "bold"),
             fg_color=self.colors['accent'],
             hover_color=self.colors['primary_dark'],
-            text_color=self.colors['text_dark']
+            text_color=self.colors['text_dark'],
+            height=32
         )
-        detect_btn.pack(pady=10)
+        detect_btn.pack(pady=5, padx=5, fill="x")
 
         # Camera list frame
-        self.camera_list_frame = ctk.CTkFrame(content, fg_color=self.colors['bg'], corner_radius=8)
-        self.camera_list_frame.pack(fill="both", expand=True, pady=10)
+        self.camera_list_frame = ctk.CTkFrame(content, fg_color=self.colors['bg'], corner_radius=5)
+        self.camera_list_frame.pack(fill="both", expand=True, pady=5, padx=5)
 
         # View mode
         ctk.CTkLabel(
             content,
             text="View Mode:",
-            font=("Georgia", 11),
+            font=("Georgia", 10),
             text_color=self.colors['text_dark']
-        ).pack(pady=(10, 5))
+        ).pack(pady=(5, 2), padx=5, anchor="w")
 
         view_frame = ctk.CTkFrame(content, fg_color="transparent")
-        view_frame.pack(fill="x", pady=5)
+        view_frame.pack(fill="x", pady=3, padx=5)
 
         ctk.CTkRadioButton(
             view_frame,
-            text="Single Camera",
+            text="Single",
             variable=self.view_mode,
             value="single",
-            font=("Georgia", 10),
+            font=("Georgia", 9),
             text_color=self.colors['text_dark'],
             fg_color=self.colors['primary'],
             hover_color=self.colors['primary_dark']
-        ).pack(side="left", padx=10)
+        ).pack(side="left", padx=5)
 
         ctk.CTkRadioButton(
             view_frame,
-            text="Grid (Multi-Camera)",
+            text="Grid",
             variable=self.view_mode,
             value="grid",
-            font=("Georgia", 10),
+            font=("Georgia", 9),
             text_color=self.colors['text_dark'],
             fg_color=self.colors['primary'],
             hover_color=self.colors['primary_dark']
-        ).pack(side="left", padx=10)
+        ).pack(side="left", padx=5)
 
         # Zoom controls
         ctk.CTkLabel(
@@ -645,7 +654,7 @@ class BeautifulOpenCVPanelV10_2(TkinterDnD.Tk if HAS_DND else ctk.CTk):
     def setup_image_adjustment_controls(self, parent):
         """Image adjustment controls"""
         module = CollapsibleModule(parent, "🎨 Image Adjustments", self.colors, start_open=False)
-        module.pack(fill="x", pady=5)
+        module.pack(fill="x", pady=2, padx=2)
 
         content = module.content
 
@@ -706,7 +715,7 @@ class BeautifulOpenCVPanelV10_2(TkinterDnD.Tk if HAS_DND else ctk.CTk):
     def setup_detection_controls(self, parent):
         """Detection and display mode controls"""
         module = CollapsibleModule(parent, "🔍 Detection Modes", self.colors, start_open=False)
-        module.pack(fill="x", pady=5)
+        module.pack(fill="x", pady=2, padx=2)
 
         content = module.content
 
@@ -773,7 +782,7 @@ class BeautifulOpenCVPanelV10_2(TkinterDnD.Tk if HAS_DND else ctk.CTk):
     def setup_measurement_controls(self, parent):
         """Measurement controls"""
         module = CollapsibleModule(parent, "📏 Measurements", self.colors, start_open=False)
-        module.pack(fill="x", pady=5)
+        module.pack(fill="x", pady=2, padx=2)
 
         content = module.content
 
@@ -836,7 +845,7 @@ class BeautifulOpenCVPanelV10_2(TkinterDnD.Tk if HAS_DND else ctk.CTk):
             return
 
         module = CollapsibleModule(parent, "🌡️ PID Controller", self.colors, start_open=False)
-        module.pack(fill="x", pady=5)
+        module.pack(fill="x", pady=2, padx=2)
 
         content = module.content
 
@@ -877,7 +886,7 @@ class BeautifulOpenCVPanelV10_2(TkinterDnD.Tk if HAS_DND else ctk.CTk):
     def setup_roi_controls(self, parent):
         """ROI controls"""
         module = CollapsibleModule(parent, "🎯 Region of Interest", self.colors, start_open=False)
-        module.pack(fill="x", pady=5)
+        module.pack(fill="x", pady=2, padx=2)
 
         content = module.content
 
@@ -913,7 +922,7 @@ class BeautifulOpenCVPanelV10_2(TkinterDnD.Tk if HAS_DND else ctk.CTk):
     def setup_display_controls(self, parent):
         """Display controls"""
         module = CollapsibleModule(parent, "💾 Screenshot & Display", self.colors, start_open=False)
-        module.pack(fill="x", pady=5)
+        module.pack(fill="x", pady=2, padx=2)
 
         content = module.content
 
@@ -943,7 +952,7 @@ class BeautifulOpenCVPanelV10_2(TkinterDnD.Tk if HAS_DND else ctk.CTk):
     def setup_recording_controls(self, parent):
         """Recording controls"""
         module = CollapsibleModule(parent, "🎬 Video Recording", self.colors, start_open=False)
-        module.pack(fill="x", pady=5)
+        module.pack(fill="x", pady=2, padx=2)
 
         content = module.content
 

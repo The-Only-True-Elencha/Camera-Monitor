@@ -535,10 +535,9 @@ class BeautifulOpenCVPanelV10_2(TkinterDnD.Tk if HAS_DND else ctk.CTk):
             textvariable=self.auto_capture_save_path,
             font=("Georgia", 9),
             fg_color=self.colors['bg'],
-            text_color=self.colors['text_dark'],
-            width=220
+            text_color=self.colors['text_dark']
         )
-        path_entry.pack(side="left", padx=(0, 3))
+        path_entry.pack(side="left", fill="x", expand=True, padx=(0, 3))
 
         browse_btn = ctk.CTkButton(
             path_frame,
@@ -822,10 +821,9 @@ class BeautifulOpenCVPanelV10_2(TkinterDnD.Tk if HAS_DND else ctk.CTk):
             textvariable=self.pixels_per_mm,
             font=("Georgia", 10),
             fg_color=self.colors['bg'],
-            text_color=self.colors['text_dark'],
-            width=100
+            text_color=self.colors['text_dark']
         )
-        calib_entry.pack(side="left", padx=(10, 5))
+        calib_entry.pack(side="left", fill="x", expand=True, padx=(10, 5))
 
         calib_btn = ctk.CTkButton(
             calib_frame,
@@ -879,9 +877,8 @@ class BeautifulOpenCVPanelV10_2(TkinterDnD.Tk if HAS_DND else ctk.CTk):
             textvariable=self.pid_target_size,
             font=("Georgia", 10),
             fg_color=self.colors['bg'],
-            text_color=self.colors['text_dark'],
-            width=100
-        ).pack(pady=5)
+            text_color=self.colors['text_dark']
+        ).pack(pady=5, padx=5, fill="x")
 
     def setup_roi_controls(self, parent):
         """ROI controls"""
@@ -1292,35 +1289,48 @@ class BeautifulOpenCVPanelV10_2(TkinterDnD.Tk if HAS_DND else ctk.CTk):
             self.measurement_value_label.configure(text="No measurements")
 
     def display_frame(self, frame):
-        """Display frame in video label"""
+        """Display frame in video label - FILLS ENTIRE SPACE"""
         # Convert BGR to RGB
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
         # Convert to PIL Image
         pil_image = Image.fromarray(frame_rgb)
 
-        # Get label size
+        # Get CURRENT label size (updates dynamically as window resizes)
         label_width = self.video_label.winfo_width()
         label_height = self.video_label.winfo_height()
 
-        # Resize to fit label while maintaining aspect ratio
-        if label_width > 1 and label_height > 1:
-            img_ratio = pil_image.width / pil_image.height
-            label_ratio = label_width / label_height
+        # Make sure we have valid dimensions
+        if label_width <= 1 or label_height <= 1:
+            # Window not fully initialized yet, use default
+            label_width = 800
+            label_height = 600
 
-            if img_ratio > label_ratio:
-                # Image is wider
-                new_width = label_width
-                new_height = int(label_width / img_ratio)
-            else:
-                # Image is taller
-                new_height = label_height
-                new_width = int(label_height * img_ratio)
+        # FILL THE ENTIRE LABEL - scale to whichever dimension fills better
+        img_ratio = pil_image.width / pil_image.height
+        label_ratio = label_width / label_height
 
-            pil_image = pil_image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+        # Calculate both possible scales
+        scale_width = label_width / pil_image.width
+        scale_height = label_height / pil_image.height
+
+        # Use the LARGER scale to ensure we fill the space (may crop)
+        # This eliminates blank space around the image
+        scale = max(scale_width, scale_height)
+
+        # Calculate new size
+        new_width = int(pil_image.width * scale)
+        new_height = int(pil_image.height * scale)
+
+        # Ensure we don't go below label size
+        new_width = max(new_width, label_width)
+        new_height = max(new_height, label_height)
+
+        # Resize with high quality
+        pil_image = pil_image.resize((new_width, new_height), Image.Resampling.LANCZOS)
 
         # Convert to CTkImage
-        ctk_image = ctk.CTkImage(light_image=pil_image, size=(pil_image.width, pil_image.height))
+        ctk_image = ctk.CTkImage(light_image=pil_image, size=(new_width, new_height))
 
         # Update label
         self.video_label.configure(image=ctk_image, text="")
